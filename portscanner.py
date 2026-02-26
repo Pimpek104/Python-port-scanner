@@ -17,7 +17,8 @@ hostIP[-1] = 0
 for ipa in range(0, 256):
     hostIP[-1] = ipa
     listofips.append(hostIP.copy())
-    resulto = [".".join(str(octet) for octet in ip) for ip in listofips]
+
+resulto = [".".join(str(octet) for octet in ip) for ip in listofips]
 
 def check_ip(ip):
     open_ports = []
