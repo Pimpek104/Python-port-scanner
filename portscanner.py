@@ -1,22 +1,42 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import argparse
 
-print("Please provide which port to scan: ")
+def arguments():
+    parser = argparse.ArgumentParser(description="Network port discovery tool")
+
+    # flag that just shows info
+    parser.add_argument(
+        "--info",
+        action="store_true",
+        help="Show program information"
+    )
+
+    args = parser.parse_args()
+
+    if args.info:
+        print("Welcome to network port discovery.")
+        print("This tool scans IP ports in your local network.\n")
+
+
+if __name__ == "__main__":
+    arguments()
+    print(f"Please provide which port to scan:")
 
 ports = []
 ports = input().split(',')
 ports = list(map(int, ports))
 
-
 listofips = []
-
 hostIP = socket.gethostbyname(socket.gethostname()).split('.')
 hostIP[-1] = 0
-
+hostIP[-2] = 0
 
 for ipa in range(0, 256):
-    hostIP[-1] = ipa
-    listofips.append(hostIP.copy())
+    for ipb in range(0, 256):
+        hostIP[-2] = ipa
+        hostIP[-1] = ipb
+        listofips.append(hostIP.copy())
 
 resulto = [".".join(str(octet) for octet in ip) for ip in listofips]
 
@@ -35,9 +55,10 @@ def check_ip(ip):
     if open_ports:
         return f"\033[32mOpen ports on {ip}: {', '.join(map(str, open_ports))}\033[0m"
     
-with ThreadPoolExecutor(max_workers=255) as executor:
+
+with ThreadPoolExecutor(max_workers=1000) as executor:
     futures = [executor.submit(check_ip, ip) for ip in resulto]
     for future in as_completed(futures):
         res = future.result()
-        if res is not None:  # only print non-None results
+        if res is not None: 
             print(res)
