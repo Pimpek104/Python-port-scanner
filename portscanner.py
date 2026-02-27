@@ -41,8 +41,8 @@ for ipa in range(0, 256):
 resulto = [".".join(str(octet) for octet in ip) for ip in listofips]
 
 def check_ip(ip):
-    open_ports = []
-
+    open_ports = {}
+    
     for port in ports:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(0.2)
@@ -50,17 +50,20 @@ def check_ip(ip):
         sock.close()
 
         if sock_result == 0:
-            open_ports.append(port)
-
-    if open_ports:
-        for port in open_ports:
             try:
                 with socket.create_connection((ip, port), timeout=1) as s:
                     banner = s.recv(1024).decode(errors="ignore").strip()
-            except Exception as e:
-                print(f"Failed to perform service detection on {ip}")
+            except Exception:
+                banner = "Unknown service"
 
-        return f"\033[32mOpen ports on {ip}: {', '.join(map(str, open_ports))}. Service: {banner}\033[0m"
+            open_ports[port] = banner
+
+    if open_ports:
+        results = []
+        for port, banner in open_ports.items():
+            results.append(f"{port} ({banner})")
+
+        return f"\033[32mOpen ports on {ip}: {', '.join(results)}\033[0m"
     
 with ThreadPoolExecutor(max_workers=65025) as executor:
     futures = [executor.submit(check_ip, ip) for ip in resulto]
