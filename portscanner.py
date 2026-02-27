@@ -1,5 +1,6 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import argparse
 
 def arguments():
@@ -26,7 +27,6 @@ if __name__ == "__main__":
 ports = []
 ports = input().split(',')
 ports = list(map(int, ports))
-
 listofips = []
 hostIP = socket.gethostbyname(socket.gethostname()).split('.')
 hostIP[-1] = 0
@@ -45,7 +45,7 @@ def check_ip(ip):
 
     for port in ports:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
+        sock.settimeout(0.2)
         sock_result = sock.connect_ex((ip, port))
         sock.close()
 
@@ -53,10 +53,16 @@ def check_ip(ip):
             open_ports.append(port)
 
     if open_ports:
-        return f"\033[32mOpen ports on {ip}: {', '.join(map(str, open_ports))}\033[0m"
-    
+        for port in open_ports:
+            try:
+                with socket.create_connection((ip, port), timeout=1) as s:
+                    banner = s.recv(1024).decode(errors="ignore").strip()
+            except Exception as e:
+                print(f"Failed to perform service detection on {ip}")
 
-with ThreadPoolExecutor(max_workers=1000) as executor:
+        return f"\033[32mOpen ports on {ip}: {', '.join(map(str, open_ports))}. Service: {banner}\033[0m"
+    
+with ThreadPoolExecutor(max_workers=65025) as executor:
     futures = [executor.submit(check_ip, ip) for ip in resulto]
     for future in as_completed(futures):
         res = future.result()
